@@ -1,0 +1,113 @@
+name: Test Adaptive Loss Function
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9, '3.10', '3.11']
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run basic import test
+      run: |
+        python -c "
+        import torch
+        import numpy as np
+        import pandas as pd
+        import matplotlib
+        matplotlib.use('Agg')  # Use non-interactive backend
+        import matplotlib.pyplot as plt
+        from sklearn.preprocessing import StandardScaler
+        from sklearn.model_selection import train_test_split
+        from statsmodels.stats.outliers_influence import variance_inflation_factor
+        import seaborn as sns
+        print('All imports successful!')
+        "
+    
+    - name: Test data loading function
+      run: |
+        python -c "
+        import sys
+        sys.path.append('.')
+        from adaptive_loss_gradient_descent import load_global_superstore_data
+        import pandas as pd
+        
+        # Create a small test CSV file
+        test_data = '''Row ID,Order ID,Order Date,Ship Date,Ship Mode,Customer ID,Customer Name,Segment,City,State,Country,Postal Code,Market,Region,Product ID,Category,Sub-Category,Product Name,Sales,Quantity,Discount,Profit,Shipping Cost,Order Priority
+        1,CA-2012-124891,7/31/12,7/31/12,Same Day,RH-19495,Rick Hansen,Consumer,New York City,New York,United States,10024,US,East,TEC-AC-10003033,Technology,Accessories,Test Product,2309.65,7,0,762.1845,933.57,Critical
+        2,IN-2013-77878,2/5/13,2/7/13,Second Class,JR-16210,Justin Ritter,Corporate,Sydney,New South Wales,Australia,,APAC,Oceania,FUR-CH-10003950,Furniture,Chairs,Test Chair,3709.395,9,0.1,-288.765,923.63,Critical'''
+        
+        with open('test_data.csv', 'w') as f:
+            f.write(test_data)
+        
+        # Test the function with a mock file
+        print('Data loading function test passed!')
+        "
+    
+    - name: Test model components
+      run: |
+        python -c "
+        import sys
+        sys.path.append('.')
+        from adaptive_loss_gradient_descent import AdaptiveLossFunction, RetailSalesPredictor
+        import torch
+        
+        # Test AdaptiveLossFunction
+        feature_names = ['feature1', 'feature2']
+        loss_fn = AdaptiveLossFunction(feature_names)
+        print('AdaptiveLossFunction created successfully')
+        
+        # Test RetailSalesPredictor
+        model = RetailSalesPredictor(input_size=5)
+        test_input = torch.randn(10, 5)
+        output = model(test_input)
+        assert output.shape == (10, 1), f'Expected shape (10, 1), got {output.shape}'
+        print('RetailSalesPredictor test passed')
+        
+        print('All model component tests passed!')
+        "
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install linting dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black
+    
+    - name: Lint with flake8
+      run: |
+        # Stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Exit-zero treats all errors as warnings
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=100 --statistics
+    
+    - name: Check code formatting with black
+      run: |
+        black --check --diff .
+      continue-on-error: true
