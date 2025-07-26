@@ -21,6 +21,15 @@ wheels/
 *.egg
 MANIFEST
 
+# API Keys and Sensitive Information
+.env
+.env.local
+.env.production
+*.key
+*_tokens.json
+schwab_tokens.json
+CS_TOKENS/
+
 # Virtual environments
 venv/
 env/

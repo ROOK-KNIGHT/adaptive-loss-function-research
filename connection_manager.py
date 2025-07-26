@@ -9,14 +9,15 @@ import os
 from datetime import timedelta, datetime
 import time
 
-APP_KEY = "UXvDmuMdEsgAyXAWGMSOblaaLbnR8MhW"
-APP_SECRET = "Hl8zGamcb7Valfee"
+# Load API credentials from environment variables for security
+APP_KEY = os.getenv('SCHWAB_APP_KEY', 'YOUR_APP_KEY_HERE')
+APP_SECRET = os.getenv('SCHWAB_APP_SECRET', 'YOUR_APP_SECRET_HERE')
 REDIRECT_URI = "https://127.0.0.1"
 AUTH_URL = f"https://api.schwabapi.com/v1/oauth/authorize?response_type=code&client_id={APP_KEY}&redirect_uri={REDIRECT_URI}&scope=readonly"
 TOKEN_URL = "https://api.schwabapi.com/v1/oauth/token"
 
-# Path to save tokens
-TOKEN_FILE = "/Users/isaac/Desktop/CS_TOKENS/cs_tokens.json"
+# Path to save tokens - use environment variable or default
+TOKEN_FILE = os.getenv('SCHWAB_TOKEN_FILE', os.path.expanduser('~/schwab_tokens.json'))
 
 def save_tokens(tokens):
     # Calculate and save the expiration time as a string
